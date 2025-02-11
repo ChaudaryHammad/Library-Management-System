@@ -1,0 +1,1097 @@
+﻿@{
+    ViewData["Title"] = "Books";
+}
+
+
+<script src="../../plugins/jquery/jquery.min.js"></script>
+
+<script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script src="../../plugins/sweetalert2/sweetalert2.min.js"></script>
+
+<script src="../../plugins/toastr/toastr.min.js"></script>
+
+<script src="../../dist/js/adminlte.min.js"></script>
+
+<script src="../../dist/js/demo.js"></script>
+<script src="https://js.stripe.com/v3/"></script>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        toastr.success('@TempData["SuccessMessage"]');
+    </script>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        toastr.error('@TempData["ErrorMessage"]');
+    </script>
+}
+
+@if (TempData["InfoMessage"] !=null)
+{
+    <script type="text/javascript">
+        toastr.info('@TempData["InfoMessage"]');
+    </script>
+    
+}
+
+
+<style>
+    #loader {
+        position: fixed;
+        top: 50%;
+        left: 50%; 
+        transform: translate(-50%, -50%); 
+        z-index: 9999; 
+        background-color: rgba(255, 255, 255, 0.8); 
+        width: 100%; 
+        height: 100%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+    }
+
+    #adminActionsDropdown i {
+        font-size: 16px;
+        vertical-align: middle;
+    }
+
+
+</style>
+
+@using Book_Management_System.Models.Entities
+@using static Book_Management_System.Models.Entities.Enums
+@model Book_Management_System.Models.Entities.Book
+
+@{
+    var books = ViewData["BooksList"] as List<Book_Management_System.Models.Entities.Book>;
+    var totalBooks = (int)ViewData["TotalBooks"];
+    var pageSize = (int)ViewData["PageSize"];
+    var currentPage = (int)ViewData["CurrentPage"];
+    int totalPages = (int)Math.Ceiling((double)totalBooks / pageSize);
+    var users = ViewData["UserList"] as List<Book_Management_System.Models.Entities.User>;
+    bool noBooksFound = ViewData["NoBooksFound"] as bool? ?? false;
+
+    if (ViewBag.UserRole != "Admin")
+    {
+        books = books?.Where(book => book.Status == Status.Active.ToString()).ToList();
+       
+    }
+}
+
+<div class="py-2 px-2 d-flex justify-content-between gap-2 align-items-center">
+
+    <!-- Header -->
+    <div class="float-left w-50">
+        <h1 class="">
+            @(ViewBag.UserRole != "Admin" ? "All Books" : "Manage Books")
+        </h1>
+    </div>
+
+    <!-- Admin Actions -->
+    @if (ViewBag.UserRole == "Admin")
+    {
+        <div class="dropdown">
+            
+            <button class="btn btn-dark" type="button" id="adminActionsDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="mr-2"> Quick Actions</span>
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <div class="dropdown-menu mt-2" aria-labelledby="adminActionsDropdown" style="margin-right:32px">
+                <!-- Send Reminder -->
+                <form asp-action="SendReminders" method="post" onsubmit="showLoader()" class="dropdown-item">
+                    <button type="submit" class="btn btn-link text-left p-0 w-100">
+                        <i class="fas fa-bell mr-1"></i> Send Reminder
+                    </button>
+                </form>
+
+                <!-- Send Fine -->
+                <form asp-action="SendFineEmails" method="post" onsubmit="showLoader()" class="dropdown-item">
+                    <button type="submit" class="btn btn-link text-left p-0 w-100">
+                     <i class="fas fa-bullhorn mr-1"></i> Send Fine
+                    </button>
+                </form>
+
+                <!-- Create Book -->
+                <button type="button" class="dropdown-item" data-toggle="modal" data-target="#modal-default">
+                    <i class="fas fa-plus mr-1"></i> Add New Book
+                </button>
+            </div>
+        </div>
+
+    }
+</div>
+<div id="loader" class="text-center my-2" style="display: none;">
+    <i class="fas fa-sync-alt fa-spin fa-2x text-secondary"></i>
+</div>
+
+@if (books != null && books.Count > 0)
+{
+        <div>
+            <div class="row px-2">
+                <div class="col-md-12">
+                    <div class="card">
+                    <div class="card-header">
+                        <div class="card-tools w-100 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div>
+                                    <form method="get" class="form-inline">
+                                        <div class="input-group input-group-sm">
+
+                                            <input type="number" id="pageSize" name="pageSize" class="form-control rounded  "
+                                                   value="@pageSize" min="1" onchange="this.form.submit()" />
+                                            <input type="hidden" name="searchQuery" value="@Context.Request.Query["searchQuery"]" />
+                                        </div>
+
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div>
+                            <form method="get" class="my-3  float-right d-flex align-items-center" style="width:170px">
+                                <div class="input-group input-group-sm">
+                                <input type="text" name="searchQuery" class="form-control me-2" placeholder="Search books..." value="@Context.Request.Query["searchQuery"]" />
+
+
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
+                                    </div>
+                                
+                               
+                                </div>
+                            </form>
+                            </div>
+                           
+                        </div>
+
+
+                    </div>
+
+
+                        <div class=" card-body table-responsive p-0">
+                        <table class="table table-bordered table-hover text-nowrap">
+                                <thead>
+                                    <tr>
+                                    <th>Image</th>
+                                    <th>Qr</th>
+                                    <th>Attachments</th>
+                                    <th>
+                                        <div class="d-flex justify-content-between">
+                                        Name
+                                        <div>
+                                        <a href="?sort=Name&order=asc" title="Sort Ascending">
+                                                    <i class="fas  fa-arrow-up @(ViewData["SortColumn"] == "Name" && ViewData["SortOrder"] == "asc" ? "text-primary" : "text-muted")"></i>
+                                        </a>
+                                        <a href="?sort=Name&order=desc" title="Sort Descending">
+                                                    <i class="fas  fa-arrow-down @(ViewData["SortColumn"] == "Name" && ViewData["SortOrder"] == "desc" ? "text-primary" : "text-muted")"></i>
+                                        </a>
+                                        </div>
+                                        </div>
+                                    </th>
+                                        @* <th>Description</th> *@
+                                        <th>Author</th>
+                                       
+
+                                    <th >
+                                        <div class="d-flex justify-content-between">
+                                        <div>     Price</div>
+                                        <div>
+                                            <a href="?sort=Price&order=asc" title="Sort Ascending" class=" ">
+                                                <i class="fas fa-arrow-up @(ViewData["SortColumn"] == "Price" && ViewData["SortOrder"] == "asc" ? "text-primary" : "text-muted")"></i>
+                                            </a>
+                                            <a href="?sort=Price&order=desc" title="Sort Descending" class="">
+                                                <i class="fas fa-arrow-down @(ViewData["SortColumn"] == "Price" && ViewData["SortOrder"] == "desc" ? "text-primary" : "text-muted")"></i>
+                                            </a>
+                                        </div>
+
+                                        </div>
+                                    
+                                    </th>
+
+                                    <th >
+                                        <div class="d-flex justify-content-between">
+                                        Rating
+                                      <div>
+                                                <a href="?sort=Rating&order=asc" title="Sort Ascending">
+                                                    <i class="fas fa-arrow-up @(ViewData["SortColumn"] == "Rating" && ViewData["SortOrder"] == "asc" ? "text-primary" : "text-muted")"></i>
+                                                </a>
+                                                <a href="?sort=Rating&order=desc" title="Sort Descending">
+                                                    <i class="fas fa-arrow-down @(ViewData["SortColumn"] == "Rating" && ViewData["SortOrder"] == "desc" ? "text-primary" : "text-muted")"></i>
+                                                </a>
+                                      </div>
+                                        </div>
+                                    </th>
+
+
+                                        <th>Published Date</th>
+                                        <th>Status</th>
+                                  
+                                    
+                                  
+                                    @if (ViewBag.UserRole == "Admin")
+                                    {
+                                        <th>Action</th>
+
+                                       
+                                    }
+
+                                    <th>Reserve</th>
+                                     
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var book in books)
+                                {
+                                            <tr>
+
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(book.ImagePath))
+                                            {
+                                                <a href="@(string.IsNullOrEmpty(book.ImagePath)
+? "#"
+: $"https://localhost:7001{book.ImagePath}")"
+                                                   target="_blank">
+                                                    <img src="@book.ImagePath"
+                                                         alt="Book Image"
+                                                         style="width: 50px; height: 50px; object-fit: cover;" />
+                                                </a>
+                                            }
+                                        </td>
+
+
+                                        <td>
+
+
+                                            @if (!string.IsNullOrEmpty(book.QrCodePath))
+                                            {
+                                                <a  href="@(string.IsNullOrEmpty(book.QrCodePath)
+? "#"
+: $"https://localhost:7001{book.QrCodePath}")"
+                                                   target="_blank">
+                                                    <img src="@book.QrCodePath"
+                                                         alt="Book QR"
+                                                         style="width: 50px; height: 50px; object-fit: cover;" />
+                                                </a>
+                                            }
+                                        </td>
+
+                                        <td>
+                                            @if (string.IsNullOrEmpty(book.PdfFilePath))
+                                            {
+                                                <div class="text-center">
+                                               
+                                                </div>
+                                            }
+                                            else
+                                            {<div class="text-center">
+
+                                                    <a href="@($"https://localhost:7001{book.PdfFilePath}")" target="_blank">
+
+                                                        <i class="fas fa-file-pdf" style="color: red; cursor: pointer;" title="View PDF" data-toggle="tooltip"></i>
+
+                                                    </a>
+                                            </div>
+                                            }
+                                        </td>
+
+
+                                      
+                                   
+                                                <td>@book.Name</td>
+                                                @* <td>@book.Description</td> *@
+                                                <td>@book.Author</td>
+                                                <td>@book.Price</td>
+                                                <td>@book.Rating</td>
+                                                       <td>@book.BookPublichedAt.ToString("yyyy-MM-dd")</td>
+                                                        <td>
+
+                                            <span class="badge @(book.Status == "Active" ? "bg-success" : (book.Status == "Blocked" ? "bg-danger" : "bg-secondary"))"> @book.Status</span>
+                                                           </td>
+
+                                        @if (ViewBag.UserRole == "Admin")
+                                        {
+                                                <td>
+                                                    <div class="d-flex gap-2 justify-content-around align-items-center">
+                                                    <a data-toggle="modal" data-target="#modal-default" data-qrcodepath="@book.QrCodePath" data-imagepath="@book.ImagePath" data-pdffilepath="@book.PdfFilePath" data-id="@book.Id" data-name="@book.Name" data-description="@book.Description" data-author="@book.Author" data-price="@book.Price" data-rating="@book.Rating" data-status="@book.Status" data-published="@book.BookPublichedAt.ToString("yyyy-MM-dd")" class="btn btn-success edit-book" title="Edit">
+                                                                <i class="fas fa-edit text-white"></i>
+                                                            </a>
+                                                                <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteConfirmationModal" data-id="@book.Id" data-name="@book.Name" data-status = "@book.Status">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                                                    </div>
+                                                </td>
+
+                                            <td>
+                                                <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#adminReserveModal"
+                                                        data-bookid="@book.Id" data-bookname="@book.Name">
+                                                    Place Reservation
+                                                </button>
+                                            </td>
+
+
+                                            
+                                        }
+
+                                        @if (ViewBag.UserRole != "Admin")
+                                        {
+                                        <td>
+                                            @{
+                                                var reservedBooks = ViewData["ReservedBooks"] as List<int>;
+                                                bool isReserved = reservedBooks != null && reservedBooks.Contains(book.Id);
+                                            }
+
+                                            @if (isReserved)
+                                            {
+                                                <button type="button" class="btn btn-secondary text-center" disabled style="width:90px">
+                                                    Reserved
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                    <button style="width:90px" type="button" class="btn btn-primary" data-toggle="modal" data-target="#resConfirmationModal" data-id="@book.Id" data-name="@book.Name" data-price="@book.Price" data-author="@book.Author">
+    Reserve
+</button>
+                                            }
+                                        </td>}
+                                            </tr>
+                                }
+                                </tbody>
+                            </table>
+
+                        @if (!noBooksFound)
+                        {
+
+                      @*   <div class="card-footer clearfix">
+                            <div>
+
+                                <div class="float-left">
+                                    <p class="text-muted">
+                                        Showing @((currentPage - 1) * pageSize + 1) to @((currentPage - 1) * pageSize + books.Count) of @totalBooks books
+                                    </p>
+                                </div>
+
+                                <ul class=" pagination pagination-sm m-0 float-right">
+                                    @for (int i = 1; i <= totalPages; i++)
+                                    {
+                                        <li class="page-item @(i == currentPage ? "active" : "")">
+                                            <a class="page-link" href="?page=@i&searchQuery=@Context.Request.Query["searchQuery"]">@i</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div> *@
+
+
+                            <div class="card-footer clearfix">
+                                <div>
+                                    <div class="float-left">
+                                        <p class="text-muted">
+                                            Showing @((currentPage - 1) * pageSize + 1) to @((currentPage - 1) * pageSize + books.Count) of @totalBooks Books
+                                        </p>
+                                    </div>
+
+                                    <ul class="pagination pagination-sm m-0 float-right">
+                                        @if (currentPage > 1)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page=1&searchQuery=@Context.Request.Query["searchQuery"]">Start</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page=@(currentPage - 1)&searchQuery=@Context.Request.Query["searchQuery"]">Prev</a>
+                                            </li>
+                                        }
+
+                                        @for (int i = 1; i <= totalPages; i++)
+                                        {
+                                            if (i < currentPage - 1 || i > currentPage + 1)
+                                            {
+                                                if (i == 1 || i == totalPages)
+                                                {
+                                                    <li class="page-item @(i == currentPage ? "active" : "")">
+                                                        <a class="page-link" href="?page=@i&searchQuery=@Context.Request.Query["searchQuery"]">@i</a>
+                                                    </li>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                                    <a class="page-link" href="?page=@i&searchQuery=@Context.Request.Query["searchQuery"]">@i</a>
+                                                </li>
+                                            }
+                                        }
+
+                                        @if (currentPage < totalPages)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page=@(currentPage + 1)&searchQuery=@Context.Request.Query["searchQuery"]">Next</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page=@totalPages&searchQuery=@Context.Request.Query["searchQuery"]">End</a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+
+
+
+                        }
+
+                       
+                        </div>
+
+                    </div>
+
+
+
+
+                </div>
+            </div>
+        </div>
+}
+else if (noBooksFound)
+{
+    <div class="alert alert-warning" role="alert">
+        No books found matching your search query: "<strong>@Context.Request.Query["searchQuery"]</strong>"
+    </div>
+}
+else
+{
+    <p class="text-muted">No books available.</p>
+}
+
+
+
+
+<div class="modal fade" id="adminReserveModal" tabindex="-1" role="dialog" aria-labelledby="adminReserveModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post" asp-action="AdminReserveBook">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminReserveModalLabel">Reserve Book </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="bookId" name="bookId" />
+                    <div class="form-group">
+                      
+                        <select id="userId" name="userId" class="form-control" required>
+                            <option value="" disabled selected>Select User</option>
+                            @foreach (var user in users)
+                            {
+                                <option value="@user.Id">@user.FirstName (@user.Email)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Reserve</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+<!-- delete modal -->
+
+
+<!-- Modal -->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmationModalLabel">Confirm Delete</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete the book <strong id="bookName"></strong>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form id="deleteForm" asp-action="Delete" method="post">
+                    <input type="hidden" name="id" id="bookId" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="modal-default">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="modalTitle">Create Book</h4>
+            </div>
+            <div class="modal-body">
+                <form id="bookForm" asp-action="Index" method="post" enctype="multipart/form-data">
+                    <input type="hidden" id="Id" name="Id" asp-for="Id" />
+
+                    <div class="form-group">
+                        <label for="Name">Book Name</label>
+                        <input type="text" class="form-control" id="Name" name="Name" required />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Description">Description</label>
+                        <textarea class="form-control" id="Description" name="Description" required></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Author">Author</label>
+                        <input type="text" class="form-control" id="Author" name="Author" required />
+                        <span asp-validation-for="Author" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Price">Price</label>
+                        <input type="number" class="form-control" id="Price" name="Price" required />
+                        <span asp-validation-for="Price" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Rating">Rating</label>
+                        <input type="number" class="form-control" id="Rating" name="Rating" required />
+                        <span asp-validation-for="Rating" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="BookPublichedAt">Published Date</label>
+                        <input type="date" class="form-control" id="BookPublichedAt" name="BookPublichedAt" required />
+                        <span asp-validation-for="BookPublichedAt" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Status">Status</label>
+                        <select id="Status" name="Status" class="form-control">
+                            <option value="Active">Active</option>
+                            <option value="Blocked">Blocked</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+
+                    <!-- Upload Section -->
+                    <div class="form-row align-items-start mb-3">
+                        <div class="col">
+                           
+                            <label class="custom-file-upload">
+                                <input type="file" id="ImageFile" name="ImageFile" accept="image/*" onchange="previewImage(event)" />
+                                <i class="fas fa-upload"></i> Choose Image
+                            </label>
+                            <span asp-validation-for="ImageFile" class="text-danger"></span>
+                            <!-- Image Preview -->
+                            <div class="mb-3">
+                                <img id="imagePreview" src="/BookImages/defaultBook.jpg" alt="Image Preview" class="img-thumbnail" style="width:230px; height: 150px;" />
+                            </div>
+                        </div>
+                        <div class="col">
+                           
+                            <label  class="custom-file-upload border  px-2  rounded" style="padding:6.5px">
+                                <input type="file" id="PdfFile" name="PdfFile" accept="application/pdf" />
+                                <i class="fas fa-upload"></i> Choose PDF
+                            </label>
+                            <div id="pdf-file-link " class="border rounded" style="height:150px"></div>
+                        </div>
+                        <div class="col" id="qrGen">
+                            <label class="border rounded" style="padding: 6.5px; margin-top: 5.5px; width:150px;">
+                                <button type="button" class="border-0 bg-transparent" id="generateQrCodeBtn">
+
+                                    <i class="fas fa-qrcode"></i> 
+                                    GetQR</button>
+                               
+                            </label>
+
+                            <img id="qrCodePreview" src="/Image/defaultUser.jpg" alt="QR Code Preview" class="img-thumbnail" style="width: 150px; height: 150px; display: none;" />
+                   
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="QrCodePath" name="QrCodePath" value="" />
+
+                
+                </form>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+               
+                <button type="button" class="btn btn-primary" id="saveBookBtn">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-file-upload {
+        display: inline-block;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 6px 12px;
+        margin-top: 6px;
+        text-align: center;
+        width: 100%;
+    }
+
+        .custom-file-upload input {
+            display: none;
+        }
+</style>
+
+
+
+
+
+<!-- Reservation Modal -->
+<div class="modal fade" id="resConfirmationModal" tabindex="-1" aria-labelledby="resConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resConfirmationModalLabel">Confirm Reserve</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to reserve the book <strong id="bookName"></strong> by <span id="bookAuthor"></span> for <span id="bookPrice"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form id="reserveForm" asp-action="ReserveBook" method="post">
+                    <input type="hidden" name="id" id="bookId" value="" />
+                    <button type="submit" class="btn btn-primary">Reserve</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentModalLabel">Payment Details for <strong id="paymentBookName"></strong></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="payment-element"></div>
+                <div id="payment-errors"></div>
+             
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+               
+                <button id="payButton" class="btn btn-primary">Pay <span id="paymentBookPrice"></span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+    function previewImage(event) {
+        var reader = new FileReader();
+        reader.onload = function () {
+            var output = document.getElementById('imagePreview');
+            output.src = reader.result;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+$(document).ready(function () {
+    // Populate modal fields when editing a book
+    $(document).on('click', '.edit-book', function () {
+         $('#qrGen').show();
+        var id = $(this).data('id');
+        var name = $(this).data('name');
+        var description = $(this).data('description');
+        var author = $(this).data('author');
+        var price = $(this).data('price');
+        var rating = $(this).data('rating');
+        var published = $(this).data('published');
+        var status = $(this).data('status');
+        var imagePath = $(this).data('imagepath');
+        var pdfFilePath = $(this).data('pdffilepath');
+            var qrCodePath = $(this).data('qrcodepath');
+            // Set the modal form fields for editing
+        $('#Id').val(id);
+        $('#Name').val(name);
+        $('#Description').val(description);
+        $('#Author').val(author);
+        $('#Price').val(price);
+        $('#Rating').val(rating);
+        $('#BookPublichedAt').val(published);
+        $('#Status').val(status);
+            $('#qrCodePreview').attr('src', qrCodePath || '/BookQRCodes/defaultqr.png');
+            $('#qrCodePreview').toggle(qrCodePath !== undefined);
+           
+            $('#imagePreview').attr('src', imagePath || '/BookImages/defaultBook.jpg');
+
+            if (pdfFilePath) {
+              
+                $('#pdf-file-link').html('<a href="' + pdfFilePath + '" target="_blank"><i class="fas fa-file-pdf" style="color: red;" title="View PDF"></i></a>');
+            } else {
+                $('#pdf-file-link').html('<span>No file</span>');
+            }
+
+        $('#modalTitle').text('Edit Book');
+    });
+
+    // Reset modal fields when opened for creating a new book
+    $('#modal-default').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var isEdit = button.hasClass('edit-book');
+
+        if (!isEdit) {
+          
+            $('#Id').val('');
+            $('#Name').val('');
+            $('#Description').val('');
+            $('#Author').val('');
+            $('#Price').val('');
+            $('#Rating').val('');
+            $('#BookPublichedAt').val('');
+             $('#Status').val('');
+     
+            $('#modalTitle').text('Create Book');
+                $('#imagePreview').attr('src', '/BookImages/defaultBook.jpg');
+                $('#PdfFilePath').val('');  // Reset PDF file input
+        
+
+            $('#bookForm').removeClass('was-validated');
+            $('.form-control').removeClass('is-invalid');
+            $('#Status').parent().hide();
+              $('#qrGen').hide();
+
+
+            }
+    });
+
+
+        $('#generateQrCodeBtn').click(function () {
+        var bookName = $('#Name').val(); // Get the book name from the input
+        if (bookName) {
+            $.ajax({
+                type: 'POST',
+                url: '@Url.Action("GenerateQrCode", "Book")', // Ensure this points to the correct action
+                data: { bookName: bookName },
+                success: function (response) {
+                    if (response.success) {
+                        // Update the hidden field with the QR code path
+                        $('#QrCodePath').val(response.qrCodeImage);
+
+                        // Set the QR code image preview
+                        $('#qrCodePreview').attr('src', response.qrCodeImage);
+                        $('#qrCodePreview').show(); // Show the QR code image
+                    } else {
+                        toastr.error(response.message); // Show error message
+                    }
+                },
+                error: function (xhr) {
+                    toastr.error('Error generating QR code.');
+                }
+            });
+        } else {
+            toastr.error('Please enter a book name to generate a QR code.');
+        }
+    });
+
+
+        $('#saveBookBtn').click(function (event) {
+            event.preventDefault(); // Prevent default form submission
+
+            var form = $('#bookForm')[0]; // Get the form element
+            form.classList.add('was-validated'); // Add the validation class to the form
+
+            if (form.checkValidity() === false) {
+                // If the form is invalid, prevent submission and show validation messages
+                event.stopPropagation(); // Prevent form from being submitted
+            } else {
+                // Use FormData to submit the form
+                var formData = new FormData(form); // Create FormData object
+
+                $.ajax({
+                    type: 'POST',
+                    url: '@Url.Action("Index", "Book")', // Update with your controller name
+                    data: formData,
+                    contentType: false, // Important for file uploads
+                    processData: false, // Important for file uploads
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            $('#modal-default').modal('hide');
+
+                            location.reload();
+
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function (xhr) {
+                        toastr.error('An error occurred. Please try again.');
+                    }
+                });
+            }
+        });
+   
+});
+
+
+
+
+     $('#deleteConfirmationModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget); // Button that triggered the modal
+        var bookId = button.data('id'); // Extract book id
+        var bookName = button.data('name'); // Extract book name
+
+        // Update the modal's content
+        var modal = $(this);
+        modal.find('#bookName').text(bookName);
+        modal.find('#bookId').val(bookId); // Set book id in the hidden input
+    });
+
+
+
+    const stripe = Stripe('pk_test_51MtvzuFYlEA8dyD6Ah6Sce80ZiP6gPgmNdXc8diuDywEFwfyHHYmtok7p1nCgIyQXG4TpP0YZkeyNU1QGqz3IPJP00GB88Hwjc'); // Replace with your Stripe Public API Key
+    let elements; // Declare elements in a broader scope
+
+    let bookDetails = {}; // Store book details global
+
+    // Open the Reservation Modal and Populate Data
+    $('#resConfirmationModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        const bookId = button.data('id');
+        const bookName = button.data('name');
+        const bookAuthor = button.data('author');
+        const bookPrice = button.data('price');
+
+        bookDetails = {
+            id: bookId,
+            name: bookName,
+            author: bookAuthor,
+            price: bookPrice
+        };
+
+        const modal = $(this);
+        modal.find('#bookName').text(bookName);
+        modal.find('#bookAuthor').text(bookAuthor);
+        modal.find('#bookId').val(bookId);
+        modal.find('#bookPrice').text(bookPrice);
+    });
+
+    // Handle Form Submission and Trigger Payment
+    $('#reserveForm').submit(function (event) {
+        event.preventDefault(); // Prevent default form submission
+      
+
+        $.ajax({
+            type: 'POST',
+            url: '/Book/ReserveBook',
+            data: { id: bookDetails.id },
+            success: function (response) {
+                if (response.success) {
+                    $('#resConfirmationModal').modal('hide'); 
+                    showPaymentModal(response.paymentIntentId, response.clientSecret,response.bookName, response.bookPrice, response.applicationFee, response.userBookId); // Show payment modal
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function () {
+                alert('Error reserving book.');
+            }
+        });
+    });
+
+    // Function to show the payment modal with book details
+    function showPaymentModal(paymentIntentId, clientSecret,bookName, bookPrice, applicationFee, userBookId) {
+
+        elements = stripe.elements({ clientSecret }); // Initialize elements with clientSecret
+        const options = {
+            layout: {
+                type: 'accordion',
+                defaultCollapsed: false,
+                radios: false,
+                spacedAccordionItems: true
+            }
+        };
+        const paymentElement = elements.create("payment", options);
+        paymentElement.mount("#payment-element");
+       
+        $('#paymentBookName').text(bookDetails.name); // Show book name in the modal
+        $('#paymentBookPrice').text(bookPrice);
+     
+        $('#paymentModal').modal('show');
+       
+        // Handle payment button click
+        $('#payButton').off('click').on('click', function () {
+            confirmPayment(paymentIntentId, bookPrice, applicationFee, userBookId);
+        });
+    }
+
+    function confirmPayment(paymentIntentId,bookPrice, applicationFee, userBookId) {
+        
+
+        stripe
+            .confirmPayment({
+                elements,
+                confirmParams: {
+                    payment_method: paymentIntentId, // Ensure this is correct
+                },
+                redirect: "if_required", // Prevents automatic redirection
+            })
+            .then(function (result) {
+                if (result.error) {
+                    // Display error message if payment fails
+                    $('#payment-errors').text(result.error.message);
+                } else if (result.paymentIntent && result.paymentIntent.status === "succeeded") {
+                    // Payment succeeded; save the record and redirect
+                    savePaymentRecord(paymentIntentId, bookPrice, applicationFee, userBookId)
+                        .then(() => {
+                            alert("Payment Successful!");
+                            window.location.href = "/Book/Index"; // Redirect after successful save
+                        })
+                        .catch((error) => {
+                            console.error("Failed to save payment record:", error);
+                            alert(
+                                "Payment was successful, but we failed to save the record."
+                            );
+                        });
+                } else if (result.paymentIntent && result.paymentIntent.status === "requires_action") {
+                    // Handle additional authentication if required
+                    alert("Additional authentication required.");
+                } else {
+                    alert("Unexpected payment status: " + result.paymentIntent.status);
+                }
+            })
+            .catch((error) => {
+                console.error("Error during payment confirmation:", error);
+                alert("An error occurred during payment confirmation.");
+            });
+    }
+
+
+    
+    function savePaymentRecord(paymentIntentId, amount, applicationFee, userBookId) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                type: 'POST',
+                url: '/Book/SavePayment',
+                data: {
+                    paymentIntentId: paymentIntentId,
+                    amount: amount,
+                    applicationFee: applicationFee,
+                    userBookId: userBookId,
+                
+                },
+                success: function (response) {
+                    if (response.success) {
+                        resolve();
+                    } else {
+                        reject(response.message);
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    reject(errorThrown || textStatus);
+                },
+            });
+        });
+    }
+
+
+
+
+    $('#adminReserveModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var bookId = button.data('bookid');
+        var bookName = button.data('bookname');
+
+        var modal = $(this);
+        modal.find('#bookId').val(bookId);
+        modal.find('.modal-title').text('Reserve "' + bookName + '" for User');
+    });
+
+    $(document).ready(function () {
+        $('.toggle-password').on('click', function () {
+            const passwordField = $('#password');
+            const fieldType = passwordField.attr('type') === 'password' ? 'text' : 'password';
+            passwordField.attr('type', fieldType);
+
+            // Optional: Toggle icon class (e.g., from fa-lock to fa-unlock)
+            $(this).toggleClass('fa-eye-slash fa-eye');
+        });
+
+    });
+
+
+
+    function togglePasswordVisibility(userId) {
+        var passwordInput = document.getElementById("password-" + userId);
+        var toggleIcon = passwordInput.nextElementSibling;
+
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            toggleIcon.classList.remove("fa-eye-slash");
+            toggleIcon.classList.add("fa-eye");
+        } else {
+            passwordInput.type = "password";
+            toggleIcon.classList.remove("fa-eye");
+            toggleIcon.classList.add("fa-eye-slash");
+        }
+    }
+
+
+
+
+</script>
+
+
+
+
+
+<script>
+    function showLoader() {
+        document.getElementById('loader').style.display = 'flex';
+    }
+
+</script>
+
+
+<script>
+  $(function () {
+    $("#example1").DataTable({
+      "responsive": true,
+      "autoWidth": false,
+    });
+    $('#example2').DataTable({
+      "paging": true,
+      "lengthChange": false,
+      "searching": false,
+      "ordering": true,
+      "info": true,
+      "autoWidth": false,
+      "responsive": true,
+    });
+  });
+</script>

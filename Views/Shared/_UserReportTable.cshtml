@@ -1,0 +1,25 @@
+﻿@model IEnumerable<Book_Management_System.Models.ViewModels.UserReportViewModel>
+
+<div class="px-2 table-responsive p-0">
+    <table class="table table-bordered text-nowrap">
+        <thead>
+            <tr>
+                <th>User Name</th>
+                <th>Total Reservations</th>
+                <th>Reserved Books</th>  <!-- New column for the list of reserved books -->
+                <th>Last Reserved Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.FirstName</td>
+                    <td>@item.TotalBooksReserved</td>
+                    <td>@(item.ReservedBooks ?? "No Books Reserved")</td>
+                    <td>@(item.LastReservedDate?.ToString("yyyy-MM-dd") ?? "N/A")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

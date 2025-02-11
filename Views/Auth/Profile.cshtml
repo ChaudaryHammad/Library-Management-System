@@ -1,0 +1,31 @@
+﻿@model Book_Management_System.Models.Entities.User
+
+@{
+    ViewData["Title"] = "Profile";
+    
+}
+
+<script src="../../plugins/jquery/jquery.min.js"></script>
+
+<script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+
+<script src="../../plugins/toastr/toastr.min.js"></script>
+
+<script src="../../dist/js/adminlte.min.js"></script>
+<div class="card">
+   
+    <div class="card-body box-profile">
+        <div class="text-center">
+            <img class="profile-user-img img-fluid img-circle"
+                 src="@Url.Content(ViewBag.ProfileImage) "
+                 alt="User profile picture" style="object-fit:cover;width:150px;height:150px">
+        </div>
+        <p><strong class="profile-username">Name: </strong>  @Model.FirstName @Model.LastName</p>
+        <p><strong class="profile-username">Email: </strong>  @Model.Email</p>
+        <p><strong class="profile-username">Role: </strong>  @Model.Role</p>
+    
+       
+        <p><strong class="profile-username">Registered At:  </strong>  @Model.CreatedAt.ToString("yyyy-MM-dd")</p>
+    </div>
+</div>

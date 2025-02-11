@@ -1,0 +1,137 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Login";
+}
+
+<!-- Include necessary styles and scripts -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../plugins/fontawesome-free/css/all.min.css">
+<link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+<link rel="stylesheet" href="../../plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+<link rel="stylesheet" href="../../dist/css/adminlte.min.css">
+<link href="../../plugins/toastr/toastr.css" rel="stylesheet" />
+<script src="../../plugins/jquery/jquery.min.js"></script>
+<script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../../plugins/toastr/toastr.min.js"></script>
+
+<body class="hold-transition login-page">
+<div class="login-box">
+    <div class="login-logo">
+        <a href="/"><b>Library</b> SYSTEM</a>
+    </div>
+    <div class="card">
+        <div class="card-body login-card-body">
+            <p class="login-box-msg">Sign in here</p>
+
+            <!-- Login Form -->
+            <form asp-action="Login" method="post">
+                <div class="input-group mb-3">
+                    <input type="email" class="form-control" placeholder="Email" id="email" name="email" required>
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-envelope"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group mb-3">
+                    <input type="password" class="form-control" placeholder="Password" id="password" name="password" required>
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-eye-slash toggle-password" style="cursor: pointer;"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-8">
+                        <div class="icheck-primary">
+                            <input type="checkbox" id="remember">
+                            <label for="remember">Remember Me</label>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                            <button type="submit" class="btn btn-primary btn-block" id="loginButton">
+                                Sign In
+                                <span id="loadingSpinner" class="spinner-border spinner-border-sm text-light" role="status" aria-hidden="true" style="display: none;"></span>
+                            </button>
+                    </div>
+                </div>
+            </form>
+
+            <p class="mb-1">
+                <a href="/Auth/Forgotpassword">I forgot my password</a>
+            </p>
+            <p class="mb-0">
+                <span class="text-center">Not have an account?</span> <a href="/Auth/Register">Register</a>
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+
+<!-- Toastr Notifications -->
+@if (TempData["SuccessMessage"] != null)
+{
+        <script>
+            $(document).ready(function() {
+                toastr.success('@TempData["SuccessMessage"]');
+            });
+        </script>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+        <script>
+            $(document).ready(function() {
+                toastr.error('@TempData["ErrorMessage"]');
+            });
+        </script>
+}
+
+
+<script>
+    $(document).ready(function () {
+        $('form').on('submit', function (e) {
+          
+            e.preventDefault();
+
+       
+            $('#loginButton').prop('disabled', true);
+            $('#loadingSpinner').show();
+
+            // Send AJAX request
+            $.ajax({
+                type: 'POST',
+                url: '/Auth/Login',
+                data: $(this).serialize(),
+                success: function (response) {
+                    if (response.success) {
+                        // Redirect user to the appropriate page
+                        window.location.href = response.redirectUrl;
+                    } else {
+                        // Show error message and reset the button
+                        toastr.error(response.message);
+                        $('#loginButton').prop('disabled', false);
+                        $('#loadingSpinner').hide();
+                    }
+                },
+                error: function () {
+                    toastr.error('Something went wrong, please try again later.');
+                    $('#loginButton').prop('disabled', false);
+                    $('#loadingSpinner').hide();
+                }
+            });
+        });
+    });
+</script>
+
+
+<!-- Password Toggle Script -->
+<script>
+    $(document).ready(function() {
+        $('.toggle-password').on('click', function() {
+            const passwordField = $('#password');
+            const fieldType = passwordField.attr('type') === 'password' ? 'text' : 'password';
+            passwordField.attr('type', fieldType);
+            $(this).toggleClass('fa-eye-slash fa-eye');
+        });
+    });
+</script>

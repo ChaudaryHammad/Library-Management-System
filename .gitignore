@@ -1,0 +1,88 @@
+## Ignore Visual Studio temporary files, build results, and user-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+[xX]64/
+[xX]86/
+build/
+[Bb]in/
+[Oo]bj/
+
+## NuGet Packages
+*.nupkg
+# The packages folder can be ignored because of Package Restore
+**/packages/*
+!**/packages/build/
+!**/packages/repositories.config
+
+## .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+## Publish folder
+publish/
+
+## IIS Express
+.vs/
+/.vsconfig
+
+## Logs
+*.log
+
+## Rider
+.idea/
+*.sln.iml
+
+## User-specific files
+*.vscode/
+*.env
+
+## Database
+*.mdf
+*.ldf
+
+## Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+## NCrunch
+*.ncrunch*
+.*crunch*.local.xml
+
+## Azure
+.scm/
+
+## Backup & temporary files
+*~
+*.tmp
+*.bak
+*.swp
+*.swo
+
+## Others
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Ignore test results
+TestResults/
+
+# Ignore node_modules if using Node.js in the project
+node_modules/
+# Ignore wwwroot folder
+wwwroot/
+
+# Ignore dotenv environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

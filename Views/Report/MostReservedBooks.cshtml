@@ -1,0 +1,122 @@
+﻿@{
+    ViewData["Title"] = "Most Reserved Books";
+}
+<script src="../../plugins/jquery/jquery.min.js"></script>
+<script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../../plugins/sweetalert2/sweetalert2.min.js"></script>
+<script src="../../plugins/toastr/toastr.min.js"></script>
+<script src="../../dist/js/adminlte.min.js"></script>
+<script src="../../dist/js/demo.js"></script>
+
+@model IEnumerable<Book_Management_System.Models.ViewModels.BookReservationReportViewModel>
+
+
+
+<div class="px-2 py-2 mb-2">
+    <div class="col-sm-6 mb-3">
+        <h1 class="text-dark">Most Reserved Books</h1>
+    </div>
+
+    <div class="row px-2">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="">
+                    <div class="card-tools py-2 w-100">
+                        <form method="get" action="@Url.Action("MostReservedBooks", "Report")" class="mb-4">
+                            <div class="d-flex justify-content-between g-3 align-items-center">
+                                <div class="col-md-4">
+                                    <label for="startDate" class="form-label">Start Date:</label>
+                                    <input type="date" id="startDate" name="startDate" class="form-control" value="@Context.Request.Query["startDate"]" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="endDate" class="form-label">End Date:</label>
+                                    <input type="date" id="endDate" name="endDate" class="form-control" value="@Context.Request.Query["endDate"]" />
+                                </div>
+                                <div class="col-md-2 d-flex align-items-center" style="margin-top:30px">
+                                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-center" style="margin-top:30px">
+                                    <button type="button" class="btn btn-secondary w-100" id="resetFilters">Reset Filters</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    @if (Model != null && Model.Any())
+                    {
+                        @Html.Partial("_BookReservationReportTable", Model)
+                        <!-- Pagination Controls -->
+                      <div class="float-right mr-2">
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center mt-4">
+                                    @if (ViewBag.PageNumber > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("MostReservedBooks", new { startDate = Context.Request.Query["startDate"], endDate = Context.Request.Query["endDate"], pageNumber = 1, pageSize = ViewBag.PageSize })">Start</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("MostReservedBooks", new { startDate = Context.Request.Query["startDate"], endDate = Context.Request.Query["endDate"], pageNumber = ViewBag.PageNumber - 1, pageSize = ViewBag.PageSize })">Previous</a>
+                                        </li>
+                                    }
+
+                                    @for (int i = Math.Max(1, ViewBag.PageNumber - 2); i <= Math.Min(ViewBag.TotalPages, ViewBag.PageNumber + 2); i++)
+                                    {
+                                        <li class="page-item @(i == ViewBag.PageNumber ? "active" : "")">
+                                            <a class="page-link" href="@Url.Action("MostReservedBooks", new { startDate = Context.Request.Query["startDate"], endDate = Context.Request.Query["endDate"], pageNumber = i, pageSize = ViewBag.PageSize })">@i</a>
+                                        </li>
+                                    }
+
+                                    @if (ViewBag.PageNumber < ViewBag.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("MostReservedBooks", new { startDate = Context.Request.Query["startDate"], endDate = Context.Request.Query["endDate"], pageNumber = ViewBag.PageNumber + 1, pageSize = ViewBag.PageSize })">Next</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("MostReservedBooks", new { startDate = Context.Request.Query["startDate"], endDate = Context.Request.Query["endDate"], pageNumber = ViewBag.TotalPages, pageSize = ViewBag.PageSize })">End</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+
+                          </div>
+
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center" role="alert">
+                            No data available for the selected date range.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function () {
+      
+        $('#startDate').on('change', function () {
+          
+            var startDate = $(this).val();
+
+         
+            $('#endDate').attr('min', startDate);
+        });
+
+  
+        var startDate = $('#startDate').val();
+        if (startDate) {
+            $('#endDate').attr('min', startDate);
+        }
+        $('#resetFilters').on('click', function () {
+            // Reset both date fields
+            $('#startDate').val('');
+            $('#endDate').val('');
+
+            // Submit the form to apply the reset
+            $('#filterForm').submit();
+        });
+    });
+</script>

@@ -1,0 +1,72 @@
+﻿@model List<Book_Management_System.Models.Entities.PaymentRecord>
+
+@{
+    ViewData["Title"] = "Payment History";
+}
+
+<script src="../../plugins/jquery/jquery.min.js"></script>
+
+<script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script src="../../plugins/sweetalert2/sweetalert2.min.js"></script>
+
+<script src="../../plugins/toastr/toastr.min.js"></script>
+
+<script src="../../dist/js/adminlte.min.js"></script>
+
+<script src="../../dist/js/demo.js"></script>
+
+
+@if (Model.Count == 0)
+{
+    <div class="py-2 px-4" style="display: flex; justify-content: space-between; align-items: center;">
+        <p>You have no payment record yet.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <div class="col-md-12">
+            <div class="card-body">
+                @if (ViewBag.UserRole == "Admin")
+                {
+                    <h4><strong>Total Revenue: </strong>@ViewBag.TotalRevenue.ToString("C")</h4>
+                }
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Amount</th>
+                            <th>Application Fee</th>
+                            <th>Payment Date</th>
+                            <th>Book Name</th>
+                            <th>Payment Intent ID</th>
+                            <th>User Name</th>
+                            
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in Model)
+                        {
+                            <tr>
+                                <td>@payment.Amount.ToString("C")</td>
+                                <td>@(payment.ApplicationFee.HasValue ? payment.ApplicationFee.Value.ToString() : "Nill")</td>
+
+                                <td>@payment.PaymentDate.ToString("dd-MM-yyyy")</td>
+                                <td>@payment.Book.Name</td>
+                                <td>@payment.PaymentIntentId</td>
+                                <td>@payment.Users.FirstName @payment.Users.LastName</td>
+
+
+                                <td>
+                                    <span class="badge bg-success">   @payment.Status</span>
+                                 </td>
+                              
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}

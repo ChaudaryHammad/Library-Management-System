@@ -1,0 +1,182 @@
+﻿@model Book_Management_System.Models.Entities.User
+
+@{
+    Layout = null;
+}
+
+<link rel="stylesheet" href="../../plugins/fontawesome-free/css/all.min.css">
+<link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+<link rel="stylesheet" href="../../plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+<link rel="stylesheet" href="../../dist/css/adminlte.min.css">
+<link href="../../plugins/toastr/toastr.css" rel="stylesheet" />
+<script src="../../plugins/jquery/jquery.min.js"></script>
+<script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../../plugins/toastr/toastr.min.js"></script>
+
+<body class="hold-transition login-page">
+<div class="register-box">
+  <div class="register-logo">
+    <a href="/"><b>Library </b>SYSTEM</a>
+  </div>
+
+  <div class="card">
+    <div class="card-body register-card-body">
+      <p class="login-box-msg">Register here</p>
+
+                <form asp-action="Register" method="post" enctype="multipart/form-data">
+
+        <!-- First Name -->
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" asp-for="FirstName" placeholder="First name" required>
+          <div class="input-group-append">
+            <div class="input-group-text">
+              <span class="fas fa-user"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Last Name -->
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" asp-for="LastName" placeholder="Last name" required>
+          <div class="input-group-append">
+            <div class="input-group-text">
+              <span class="fas fa-user"></span>
+            </div>
+          </div>
+        </div>
+
+          <span asp-validation-for="Email" class="text-danger"></span>
+        <!-- Email -->
+        <div class="input-group mb-3">
+          <input type="email" class="form-control" asp-for="Email" placeholder="Email" required>
+         
+          <div class="input-group-append">
+            <div class="input-group-text">
+              <span class="fas fa-envelope"></span>
+            </div>
+          </div>
+
+        </div>
+
+
+                 
+
+        <!-- Password -->
+        <div class="input-group mb-3">
+          <input type="password" class="form-control" asp-for="Password" placeholder="Password" required>
+          <div class="input-group-append">
+            <div class="input-group-text">
+              <span class="fas fa-lock"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Date of Birth -->
+        <div class="mb-3">
+          <input type="date" class="form-control" asp-for="Dob" placeholder="Dob" required>
+        </div>
+
+                    <div class="avatar-upload mb-3">
+                        <input type="file" asp-for="ImageFile" id="imageUpload" accept="image/*" style="display:none;" />
+                        <label for="imageUpload" class="avatar-label">
+                            <img id="imagePreview" src="../../dist/img/user2-160x160.jpg" alt="Avatar" class="avatar" />
+                            <span class="upload-icon"><i class="fas fa-camera"></i></span>
+                        </label>
+                    </div>
+
+        <div class="row">
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary btn-block">Register</button>
+          </div>
+        </div>
+      </form>
+
+      <div class="text-center">
+          <span class="text-center">Already have an account?</span> <a href="/">Login</a>
+     </div>
+    </div>
+  </div>
+</div>
+</body>
+
+@if (TempData["SuccessMessage"] != null)
+{
+            <script>
+                $(document).ready(function() {
+                    toastr.success('@TempData["SuccessMessage"]');
+                });
+            </script>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+            <script>
+                $(document).ready(function() {
+                    toastr.error('@TempData["ErrorMessage"]');
+                });
+            </script>
+}
+
+<script>
+    document.getElementById('imageUpload').addEventListener('change', function (event) {
+        console.log(event.target.files); // Log the file list
+        const file = event.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const imagePreview = document.getElementById('imagePreview');
+            imagePreview.src = e.target.result; // Display preview
+        };
+
+        if (file) {
+            reader.readAsDataURL(file); // Convert file to Base64
+        }
+    });
+
+</script>
+
+<style>
+    .avatar-upload {
+        position: relative;
+        width: 100px; /* Size of the avatar */
+        height: 100px; /* Size of the avatar */
+        margin: 0 auto; /* Center the avatar */
+    }
+
+        .avatar-upload input[type="file"] {
+            display: none; /* Hide the file input */
+        }
+
+    .avatar-label {
+        cursor: pointer; /* Show pointer on hover */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px solid #007bff; /* Border color */
+        overflow: hidden; /* Clip the image */
+        position: relative;
+    }
+
+    .avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%; /* Make the image circular */
+        object-fit: cover; /* Ensure the image covers the avatar */
+    }
+
+    .upload-icon {
+        position: absolute;
+        bottom: 10;
+        right: 10;
+        background: white;
+        border-radius: 50%;
+        padding: 5px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+
+        .upload-icon i {
+            color: #007bff; /* Icon color */
+        }
+</style>

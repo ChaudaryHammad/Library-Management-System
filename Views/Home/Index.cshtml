@@ -1,0 +1,672 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<!-- jQuery -->
+<script src="../../plugins/jquery/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="../../plugins/sweetalert2/sweetalert2.min.js"></script>
+<!-- Toastr -->
+<script src="../../plugins/toastr/toastr.min.js"></script>
+<!-- AdminLTE App -->
+<script src="../../dist/js/adminlte.min.js"></script>
+<!-- AdminLTE for demo purposes -->
+<script src="../../dist/js/demo.js"></script>
+<link href="../../plugins/toastr/toastr.css" rel="stylesheet" />
+
+<style>
+    .avatar-upload {
+        position: relative;
+        width: 100px; /* Size of the avatar */
+        height: 100px; /* Size of the avatar */
+        margin: 0 auto; /* Center the avatar */
+    }
+
+        .avatar-upload input[type="file"] {
+            display: none; /* Hide the file input */
+        }
+
+    .avatar-label {
+        cursor: pointer; /* Show pointer on hover */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px solid #007bff; /* Border color */
+        overflow: hidden; /* Clip the image */
+        position: relative;
+    }
+
+    .table-responsive {
+        overflow-x: auto; /* Ensures horizontal scroll */
+    }
+
+    .text-nowrap td {
+        white-space: nowrap; /* Prevents content wrapping */
+    }
+
+    .avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%; /* Make the image circular */
+        object-fit: cover; /* Ensure the image covers the avatar */
+    }
+
+    .upload-icon {
+        position: absolute;
+        bottom:0;
+        right: 10;
+        background: white;
+        border-radius: 50%;
+        padding: 5px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+
+        .upload-icon i {
+            color: #007bff; /* Icon color */
+        }
+</style>
+@using Book_Management_System.Models.Entities
+
+@model Book_Management_System.Models.Entities.User
+
+@{
+    var users = ViewData["UsersList"] as List<Book_Management_System.Models.Entities.User>;
+    var totalUsers = (int)ViewData["TotalUsers"];
+    var pageSize = (int)ViewData["PageSize"];
+    var currentPage = (int)ViewData["CurrentPage"];
+    int totalPages = (int)Math.Ceiling((double)totalUsers / pageSize);
+    bool noUsersFound = ViewData["NoUsersFound"] as bool? ?? false;
+    var totalReservations = (int)ViewData["TotalReservations"];
+    var totalSales = (int)ViewData["TotalPayments"];
+    var totalBooks = (int)ViewData["TotalBooks"];
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        toastr.success('@TempData["SuccessMessage"]');
+    </script>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        toastr.error('@TempData["ErrorMessage"]');
+    </script>
+}
+<div class="col-sm-6">
+    <h1 class="mb-2 text-dark">Overview</h1>
+</div>
+
+<div class="row px-2">
+
+    <div class="col-12 col-sm-6 col-md-3">
+
+        <div class="info-box">
+            <span class="info-box-icon bg-info elevation-1"><i class="fas fa-book"></i></span>
+
+            <div class="info-box-content">
+                <span class="info-box-text">Books Available</span>
+                <span class="info-box-number">
+                    
+                    @totalBooks
+                   
+                </span>
+            </div>
+            <!-- /.info-box-content -->
+        </div>
+        <!-- /.info-box -->
+    </div>
+    <!-- /.col -->
+    
+    <div class="col-12 col-sm-6 col-md-3">
+      
+        <div class="info-box mb-3">
+            <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-receipt"></i></span>
+
+            <div class="info-box-content">
+                <span class="info-box-text">Reservations</span>
+                <span class="info-box-number">@totalReservations</span>
+            </div>
+            <!-- /.info-box-content -->
+        </div>
+        <!-- /.info-box -->
+    </div>
+    <!-- /.col -->
+    <!-- fix for small devices only -->
+    <div class="clearfix hidden-md-up"></div>
+
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3">
+            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-credit-card"></i></span>
+
+            <div class="info-box-content">
+                <span class="info-box-text">Sales</span>
+                <span class="info-box-number">@totalSales</span>
+            </div>
+            <!-- /.info-box-content -->
+        </div>
+        <!-- /.info-box -->
+    </div>
+    <!-- /.col -->
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3">
+            <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-users"></i></span>
+
+            <div class="info-box-content">
+                <span class="info-box-text">Total Users</span>
+                <span class="info-box-number">@users.Count</span>
+            </div>
+            <!-- /.info-box-content -->
+        </div>
+        <!-- /.info-box -->
+    </div>
+    <!-- /.col -->
+</div>
+
+<div class="py-2 px-2" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 class="mb-2 text-dark">All Users</h1>
+    </div>
+    <button type="button" class="btn btn-secondary " data-toggle="modal" data-target="#modal-default">
+        <svg height="24" width="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0h24v24H0z" fill="none"></path>
+            <path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z" fill="currentColor"></path>
+        </svg>
+        <a style="color:white; text-decoration:none">Create</a>
+    </button>
+</div>
+
+@if (users != null && users.Count > 0)
+{
+    <div class="table-responsive">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+
+                    <div class="card-tools w-100 d-flex justify-content-between align-items-center">
+                      <div>
+                            <div >
+                                <form method="get" class="form-inline">
+                                    <div class="input-group input-group-sm">
+                                   
+                                        <input type="number" id="pageSize" name="pageSize" class="form-control rounded  "
+                                               value="@pageSize" min="1" onchange="this.form.submit()" />
+                                        <input type="hidden" name="searchQuery" value="@Context.Request.Query["searchQuery"]" />
+                                    </div>
+
+                                </form>
+                            </div>
+                      </div>
+                      <div>
+
+                            <form method="get" class="my-3 d-flex align-items-center">
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="searchQuery" class="form-control me-2" placeholder="Search Users..." value="@Context.Request.Query["searchQuery"]" style="width:162px" />
+
+
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
+                                </div>
+
+
+                            </div>
+                        </form>
+
+                      </div>
+
+                    </div>
+
+
+                </div>
+
+                <div class="card-body  table-responsive p-0">
+                    <table class="table  table-bordered table-hover text-nowrap">
+                        <thead>
+                            <tr>
+                                  <th>Image</th>
+                                <th>
+
+                                    <div class="d-flex justify-content-between">
+                                    First Name
+                                    <div>
+                                        <a href="?sort=firstName&order=asc" title="Sort Ascending">
+                                            <i class="fas  fa-arrow-up @(ViewData["SortColumn"] == "firstName" && ViewData["SortOrder"] == "asc" ? "text-primary" : "text-muted")"></i>
+                                        </a>
+                                        <a href="?sort=firstName&order=desc" title="Sort Descending">
+                                            <i class="fas  fa-arrow-down @(ViewData["SortColumn"] == "firstName" && ViewData["SortOrder"] == "desc" ? "text-primary" : "text-muted")"></i>
+                                        </a>
+                                    </div>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="d-flex justify-content-between">
+                                    Last Name
+                                   <div>
+                                        <a href="?sort=lastName&order=asc" title="Sort Ascending">
+                                            <i class="fas  fa-arrow-up @(ViewData["SortColumn"] == "lastName" && ViewData["SortOrder"] == "asc" ? "text-primary" : "text-muted")"></i>
+                                        </a>
+                                        <a href="?sort=lastName&order=desc" title="Sort Descending">
+                                            <i class="fas  fa-arrow-down @(ViewData["SortColumn"] == "lastName" && ViewData["SortOrder"] == "desc" ? "text-primary" : "text-muted")"></i>
+                                        </a>
+                                   </div>
+                </div>
+                                </th>
+                                <th >
+                                    <div class="d-flex justify-content-between">
+                                    Email
+                                    <div>
+                                        <a href="?sort=email&order=asc" title="Sort Ascending">
+                                            <i class="fas
+ fa-arrow-up @(ViewData["SortColumn"] == "email" && ViewData["SortOrder"] == "asc" ? "text-primary" : "text-muted")"></i>
+                                        </a>
+                                        <a href="?sort=email&order=desc" title="Sort Descending">
+                                            <i class="fas  fa-arrow-down @(ViewData["SortColumn"] == "email" && ViewData["SortOrder"] == "desc" ? "text-primary" : "text-muted")"></i>
+                                        </a>
+                                    </div>
+            </div>
+                                </th>
+                                 <th>Password</th>
+                                <th>DOB</th>
+                                <th>Status</th>
+                                <th>Role</th>
+                                @if (ViewBag.UserRole == "Admin")
+                                {
+                                    <th>Action</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in users)
+                            {
+                                <tr>
+                                    <td>
+
+
+                                        @if (!string.IsNullOrEmpty(user.ImagePath))
+                                        {
+                                            <a href="@(string.IsNullOrEmpty(user.ImagePath)
+? "#"
+: $"https://localhost:7001{user.ImagePath}")"
+                                               target="_blank">
+                                                <img src="@user.ImagePath"
+                                                     alt="User Image"
+                                                     style="width: 50px; height: 50px; object-fit: cover;" />
+                                            </a>
+                                        }
+
+                                      
+                                    </td>
+                                    <td>@user.FirstName</td>
+                                    <td>@user.LastName</td>
+                                    <td>@user.Email</td>
+                                    <td>
+                                        <div style="position:relative">
+                                            <input type="password" id="password-@user.Id" value="@user.Password"  readonly style="width: 80%;" class="border-0 " />
+                                            <span class="fas fa-eye-slash toggle-password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;" onclick="togglePasswordVisibility('@user.Id')"></span>
+                                        </div>
+                                    </td>
+                                    <td>@user.Dob.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <span class="badge @(user.RecordStatus == "Active" ? "bg-success" : (user.RecordStatus == "InActive" ? "bg-danger" : "bg-secondary"))">
+                                            @user.RecordStatus
+                                        </span>
+                                    </td>
+                                    <td>@user.Role</td>
+                                    <td>
+                                        <div class="d-flex gap-2 justify-content-around align-items-center">
+                                                <a data-toggle="modal" data-target="#modal-default" data-id="@user.Id" data-firstName="@user.FirstName" data-imagepath="@user.ImagePath" data-lastName="@user.LastName" data-email="@user.Email" data-password="@user.Password" data-Dob="@user.Dob.ToString("yyyy-MM-dd")" data-RecordStatus="@user.RecordStatus" data-Role="@user.Role" class="btn btn-success edit-user" title="Edit">
+                                                    <i class="fas fa-edit text-white"></i>
+                                                </a>
+                                            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteConfirmationModal" data-id="@user.Id" data-email="@user.Email">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+
+
+                    </table>
+
+                    @if (!noUsersFound)
+                    {
+
+                        @* <div class="card-footer clearfix">
+                            <div>
+
+                                <div class="float-left">
+                                    <p class="text-muted">
+                                        Showing @((currentPage - 1) * pageSize + 1) to @((currentPage - 1) * pageSize + users.Count) of @totalUsers Users
+                                    </p>
+                                </div>
+
+                                <ul class=" pagination pagination-sm m-0 float-right">
+                                    @for (int i = 1; i <= totalPages; i++)
+                                    {
+                                        <li class="page-item @(i == currentPage ? "active" : "")">
+                                            <a class="page-link" href="?page=@i&searchQuery=@Context.Request.Query["searchQuery"]">@i</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div> *@
+
+
+                        <div class="card-footer clearfix">
+                            <div>
+                                <div class="float-left">
+                                    <p class="text-muted">
+                                        Showing @((currentPage - 1) * pageSize + 1) to @((currentPage - 1) * pageSize + users.Count) of @totalUsers Users
+                                    </p>
+                                </div>
+
+                                <ul class="pagination pagination-sm m-0 float-right">
+                                    @if (currentPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1&searchQuery=@Context.Request.Query["searchQuery"]">Start</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=@(currentPage - 1)&searchQuery=@Context.Request.Query["searchQuery"]">Prev</a>
+                                        </li>
+                                    }
+
+                                    @for (int i = 1; i <= totalPages; i++)
+                                    {
+                                        if (i < currentPage - 1 || i > currentPage + 1)
+                                        {
+                                            if (i == 1 || i == totalPages)
+                                            {
+                                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                                    <a class="page-link" href="?page=@i&searchQuery=@Context.Request.Query["searchQuery"]">@i</a>
+                                                </li>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                                <a class="page-link" href="?page=@i&searchQuery=@Context.Request.Query["searchQuery"]">@i</a>
+                                            </li>
+                                        }
+                                    }
+
+                                    @if (currentPage < totalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=@(currentPage + 1)&searchQuery=@Context.Request.Query["searchQuery"]">Next</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=@totalPages&searchQuery=@Context.Request.Query["searchQuery"]">End</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (noUsersFound)
+{
+    <div class="alert alert-warning" role="alert">
+        No User found matching your search query: "<strong>@Context.Request.Query["searchQuery"]</strong>"
+    </div>
+}
+else
+{
+    <p class="text-muted">No User available.</p>
+}
+
+
+<!-- Delete modal -->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmationModalLabel">Confirm Delete</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete the User <strong id="userEmail"></strong>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form id="deleteForm" asp-action="Delete" method="post">
+                    <input type="hidden" name="id" id="userId" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modal-default">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="modalTitle">Create User</h4>
+            </div>
+            <div class="modal-body">
+                <form id="userForm" method="post" enctype="multipart/form-data">
+                    <input type="hidden" id="Id" name="Id" />
+                    <div class="mb-3">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" name="firstName" class="form-control" required />
+                        <span asp-validation-for="FirstName" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" class="form-control" required />
+                        <span asp-validation-for="LastName" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" class="form-control" required />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" placeholder="Password" id="password" name="password" required />
+                        <div style="position:absolute; top:76%;right:10px; transform:translateY(-50%);">
+                            <span class="fas fa-eye-slash toggle-password" style="cursor: pointer;" onclick="togglePasswordVisibility()"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="Dob">Date of Birth</label>
+                        <input type="date" class="form-control" id="Dob" name="Dob" required />
+                        <span asp-validation-for="Dob" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="RecordStatus">Status</label>
+                        <select id="RecordStatus" name="RecordStatus" class="form-control">
+                            <option value="Active">Active</option>
+                            <option value="InActive">InActive</option>
+                        </select>
+                        <span asp-validation-for="RecordStatus" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="Role">Role</label>
+                        <select id="Role" name="Role" class="form-control">
+                            <option value="Admin">Admin</option>
+                            <option value="User">User</option>
+                        </select>
+                        <span asp-validation-for="Role" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ImageFile">Upload Image</label>
+                        <input type="file" id="ImageFile" name="ImageFile" class="form-control" accept="image/*" onchange="previewImage(event)" />
+                        <span asp-validation-for="ImageFile" class="text-danger"></span>
+                    </div>
+                    <!-- Image Preview -->
+                    <div class="mb-3">
+                        <img id="imagePreview" src="/Image/defaultUser.jpg" alt="Image Preview" class="img-thumbnail" style="width: 150px; height: 150px;" />
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveUserBtn">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    function previewImage(event) {
+        var reader = new FileReader();
+        reader.onload = function () {
+            var output = document.getElementById('imagePreview');
+            output.src = reader.result;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+
+    $(document).ready(function () {
+   
+        $(document).on('click', '.edit-user', function () {
+            var id = $(this).data('id');
+            var firstname = $(this).data('firstname');
+            var lastname = $(this).data('lastname');
+            var email = $(this).data('email');
+            var password = $(this).data('password');
+            var dob = $(this).data('dob');
+            var recordStatus = $(this).data('recordstatus');
+            var role = $(this).data('role');
+
+            var imagePath = $(this).data('imagepath');
+            // Set the modal form fields for editing
+            $('#Id').val(id);
+            $('#firstName').val(firstname);
+            $('#lastName').val(lastname);
+            $('#email').val(email);
+            $('#password').val(password);
+            $('#Dob').val(dob);
+            $('#RecordStatus').val(recordStatus);
+            $('#Role').val(role);
+            $('#Role').parent().show();
+            $('#RecordStatus').parent().show();
+            $('#imagePreview').attr('src', imagePath || '/Image/defaultUser.jpg');
+            // Update the modal title to "Edit User"
+            $('#modalTitle').text('Edit User');
+        });
+
+        // Reset modal fields when opened for creating a new user
+        $('#modal-default').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var isEdit = button.hasClass('edit-user');
+
+            if (!isEdit) {
+                // Clear fields for creating a new user
+                $('#Id').val('');
+                $('#firstName').val('');
+                $('#lastName').val('');
+                $('#email').val('');
+                $('#password').val('');
+                $('#Dob').val('');
+                $('#RecordStatus').val('Active');
+                $('#Role').val('User');
+                $('#imagePreview').attr('src', '/Image/defaultUser.jpg');
+                $('#Role').parent().hide();
+                $('#RecordStatus').parent().hide();
+                // Update the modal title to "Create User"
+                $('#modalTitle').text('Create User');
+
+            }
+        });
+
+        $('#saveUserBtn').click(function (event) {
+            event.preventDefault(); // Prevent default form submission
+
+            var form = $('#userForm')[0]; // Get the form element
+            form.classList.add('was-validated'); // Add the validation class to the form
+
+            if (form.checkValidity() === false) {
+                // If the form is invalid, prevent submission and show validation messages
+                event.stopPropagation(); // Prevent form from being submitted
+            } else {
+                // Use FormData to submit the form
+                var formData = new FormData(form); // Create FormData object
+               
+                $.ajax({
+                    type: 'POST',
+                    url: '@Url.Action("Index", "Home")', // Update with your controller name
+                    data: formData,
+                    contentType: false, // Important for file uploads
+                    processData: false, // Important for file uploads
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            $('#modal-default').modal('hide');
+
+                            location.reload();
+                          
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function (xhr) {
+                        toastr.error('An error occurred. Please try again.');
+                    }
+                });
+            }
+        });
+
+        // Delete user confirmation modal
+        $('#deleteConfirmationModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var userId = button.data('id');
+            var userEmail = button.data('email');
+
+            // Update the modal's content
+            var modal = $(this);
+            modal.find('#userEmail').text(userEmail);
+            modal.find('#userId').val(userId);
+        });
+    });
+
+
+    $(document).ready(function () {
+        $('.toggle-password').on('click', function () {
+            const passwordField = $('#password');
+            const fieldType = passwordField.attr('type') === 'password' ? 'text' : 'password';
+            passwordField.attr('type', fieldType);
+
+            // Optional: Toggle icon class (e.g., from fa-lock to fa-unlock)
+            $(this).toggleClass('fa-eye-slash fa-eye');
+        });
+
+    });
+
+
+
+    function togglePasswordVisibility(userId) {
+        var passwordInput = document.getElementById("password-" + userId);
+        var toggleIcon = passwordInput.nextElementSibling;
+
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            toggleIcon.classList.remove("fa-eye-slash");
+            toggleIcon.classList.add("fa-eye");
+        } else {
+            passwordInput.type = "password";
+            toggleIcon.classList.remove("fa-eye");
+            toggleIcon.classList.add("fa-eye-slash");
+        }
+    }
+</script>
